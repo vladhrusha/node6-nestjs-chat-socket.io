@@ -4,15 +4,23 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { UserChatHistory, ConnectedUsers } from './chat.interface';
 
 @WebSocketGateway()
 export class ChatGateway {
   @WebSocketServer()
   server: Server;
-  connectedUsers: { [socketId: string]: string } = {};
-  userChatHistory: { [socketId: string]: { [messageId: string]: string } } = {};
+  connectedUsers: ConnectedUsers = {};
+  userChatHistory: UserChatHistory = {};
   //conn
+  clientConnected = false;
   handleConnection(socket: Socket) {
+    //handle client connection
+    if (this.clientConnected === false) {
+      this.clientConnected = true;
+      return;
+    }
+
     this.connectedUsers[socket.id] =
       socket.handshake.query.username?.toString() ||
       `User${Math.floor(Math.random() * 100000)}`;
