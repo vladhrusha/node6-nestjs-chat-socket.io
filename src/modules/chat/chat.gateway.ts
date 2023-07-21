@@ -72,10 +72,17 @@ export class ChatGateway {
     socket: Socket,
     message: { content: string; id: string },
   ) {
-    const socketId = socket.id;
     const { id, content } = message;
 
-    this.server.emit('messageUpdated', { id, content, socketId });
+    const userIndex = this.userMessages.findIndex(
+      (user) => user.socketId === socket.id,
+    );
+    const messageIndex = this.userMessages[
+      userIndex
+    ].postedMessagesId.findIndex((messageId) => messageId === id);
+    if (messageIndex !== -1) {
+      this.server.emit('messageUpdated', { id, content });
+    } else socket.emit('messageUpdated', 'error - message not found');
   }
 
   //delete message
@@ -91,7 +98,7 @@ export class ChatGateway {
     ].postedMessagesId.findIndex((messageId) => messageId === id);
     if (messageIndex !== -1) {
       this.userMessages[userIndex].postedMessagesId.splice(messageIndex, 1);
-    }
-    this.server.emit('messageDeleted', { id, socketId });
+      this.server.emit('messageDeleted', { id, socketId });
+    } else socket.emit('messageDeleted', 'error - message not found');
   }
 }
