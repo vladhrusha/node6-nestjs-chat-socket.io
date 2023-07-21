@@ -35,10 +35,13 @@ export class ChatGateway {
   //message
   @SubscribeMessage('message')
   handleMessage(socket: Socket, message: { id: string; content: string }) {
-    const sender = this.connectedUsers[socket.id];
-    const { id, content } = message;
-    this.userChatHistory[socket.id][id] = content;
-    this.server.emit('message', { sender, content });
+    const username = this.connectedUsers[socket.id];
+    this.userChatHistory[socket.id][message.id] = message.content;
+    this.server.emit('message', {
+      username,
+      content: message.content,
+      messageId: message.id,
+    });
   }
 
   //update message
@@ -47,11 +50,12 @@ export class ChatGateway {
     socket: Socket,
     message: { content: string; id: string },
   ) {
-    const { id, content } = message;
-
-    if (this.userChatHistory[socket.id][id]) {
-      this.userChatHistory[socket.id][id] = content;
-      this.server.emit('messageUpdated', { id, content });
+    if (this.userChatHistory[socket.id][message.id]) {
+      this.userChatHistory[socket.id][message.id] = message.content;
+      this.server.emit('messageUpdated', {
+        messageId: message.id,
+        content: message.content,
+      });
     } else {
       socket.emit('messageUpdated', 'error - message not found');
     }
@@ -64,7 +68,6 @@ export class ChatGateway {
       delete this.userChatHistory[socket.id][message.id];
       this.server.emit('messageDeleted', {
         messageId: message.id,
-        socketId: socket.id,
       });
     } else {
       socket.emit('messageDeleted', 'error - message not found');
